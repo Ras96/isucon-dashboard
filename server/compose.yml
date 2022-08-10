@@ -7,25 +7,17 @@ services:
     command: /tmp/setup.sh
     user: '0'
     volumes:
-      - certs:/usr/share/elasticsearch/config/certs
       - ./setup.sh:/tmp/setup.sh
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - KIBANA_PASSWORD=${KIBANA_PASSWORD}
-    healthcheck:
-      test: ['CMD-SHELL', '[ -f config/certs/es/es.crt ]']
-      interval: 1s
-      timeout: 5s
-      retries: 120
 
   es:
     container_name: es
     image: elasticsearch:${STACK_VERSION}
     depends_on:
-      setup:
-        condition: service_healthy
+      - setup
     volumes:
-      - certs:/usr/share/elasticsearch/config/certs
       - esdata01:/usr/share/elasticsearch/data
       - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./elasticsearch/log4j2.properties:/usr/share/elasticsearch/config/log4j2.properties
@@ -45,7 +37,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
+          'curl -sI -u elastic:${ELASTIC_PASSWORD} http://es:9200 | grep -q "200 OK"',
         ]
       interval: 10s
       timeout: 10s
@@ -58,7 +50,6 @@ services:
       es:
         condition: service_healthy
     volumes:
-      - certs:/usr/share/kibana/config/certs
       - kibanadata:/usr/share/kibana/data
       - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
     ports:
@@ -69,10 +60,7 @@ services:
     mem_limit: 2g
     healthcheck:
       test:
-        [
-          'CMD-SHELL',
-          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
-        ]
+        ['CMD-SHELL', "curl -sI http://localhost:5601 | grep -q '302 Found'"]
       interval: 10s
       timeout: 10s
       retries: 120
@@ -84,7 +72,6 @@ services:
       es:
         condition: service_healthy
     volumes:
-      - certs:/fluent-bit/certs
       - ./fluent-bit:/fluent-bit/etc
       - ./log/fluent-bit:/fluent-bit/log
     ports:
@@ -92,12 +79,9 @@ services:
       - '24225:24225'
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-      - SSL_CERT_FILE=/fluent-bit/certs/ca/ca.crt
     mem_limit: 1g
 
 volumes:
-  certs:
-    driver: local
   esdata01:
     driver: local
   kibanadata:

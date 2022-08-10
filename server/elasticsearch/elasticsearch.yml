@@ -15,17 +15,3 @@ ingest:
 xpack:
   security:
     enabled: true
-    http:
-      ssl:
-        enabled: true
-        key: certs/es/es.key
-        certificate: certs/es/es.crt
-        certificate_authorities: certs/ca/ca.crt
-        verification_mode: certificate
-    transport:
-      ssl:
-        enabled: true
-        key: certs/es/es.key
-        certificate: certs/es/es.crt
-        certificate_authorities: certs/ca/ca.crt
-        verification_mode: certificate
